@@ -69,6 +69,8 @@ type Property struct {
 
 // evaluateMath computes the result of a string expression, using the
 // mathjs API: https://api.mathjs.org/
+//
+// On any error, the return value is always 0.
 func evaluateMath(e string) (int, error) {
 	res, err := http.Get(mathAPI + "?expr=" + url.QueryEscape(e))
 	if err != nil {
@@ -76,7 +78,11 @@ func evaluateMath(e string) (int, error) {
 	}
 	body, _ := ioutil.ReadAll(res.Body)
 	_ = res.Body.Close()
-	calc, _, _ := big.ParseFloat(string(body), 10, 64, big.ToNearestEven)
+	// Float precision is set to 64, as the input numbers are 64-bit integers.
+	calc, _, err := big.ParseFloat(string(body), 10, 64, big.ToNearestEven)
+	if err != nil {
+		return 0, nil
+	}
 	calcConv, _ := calc.Int64()
 	return int(calcConv), nil
 }
