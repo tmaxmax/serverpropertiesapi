@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-func TestGetServerProperties(t *testing.T) {
-	prop, err := GetServerProperties()
+func TestServerProperties(t *testing.T) {
+	prop, err := ServerProperties()
 	if err != nil {
 		t.Errorf("Failed. Error: %v\n", err)
 	}

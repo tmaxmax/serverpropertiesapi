@@ -87,10 +87,10 @@ func evaluateMath(e string) (int, error) {
 	return int(calcConv), nil
 }
 
-// GetServerProperties scrapes the official Minecraft Wiki and extracts
+// ServerProperties scrapes the official Minecraft Wiki and extracts
 // the Java Server Properties, returning a slice with the keys and their
 // respective documentation.
-func GetServerProperties() ([]Property, error) {
+func ServerProperties() ([]Property, error) {
 	prop := make([]Property, 0, 50)
 	limitErr := error(nil)
 
