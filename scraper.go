@@ -16,7 +16,7 @@ import (
 const (
 	mathAPI                         = "http://api.mathjs.org/v4/"
 	querySelector                   = `[data-description="Server properties"]:not([data-description="Server properties"] ~ [data-description="Server properties"]) tr:not(:first-child)`
-	regexpLimits                    = `(\d+[-–]\(?\d+([+\-*/^]\d+ ?[+\-*/^] ?\d+)?\)?)`
+	regexpLimits                    = `(\d+[-–](?:\d+|\(\d+([+\-*/^]\d+[ ]?[+\-*/^][ ]?\d+)?\)))`
 	regexpLimitsNotCalculated       = `\d+[+\-*/^]\d+ ?[+\-*/^]? ?\d+?`
 	minecraftBooleanTypename        = "boolean"
 	minecraftIntegerTypename        = "integer"
@@ -144,12 +144,7 @@ func GetServerProperties() ([]Property, error) {
 						// nothing to do here when the limits string is empty
 						return
 					}
-					// Due to how the regexpLimits works, when the limit values are actual numbers,
-					// a closing bracket remains. It must be eliminated.
-					// TODO: Modify regexpLimits so this isn't necessary, if possible
-					if l[len(l)-1] == ')' && !strings.Contains(l, "(") {
-						l = l[:len(l)-1]
-					}
+
 					// Get the two values.
 					// Also initialize the error variable
 					values, err := rs.Split(l, 2), error(nil)
