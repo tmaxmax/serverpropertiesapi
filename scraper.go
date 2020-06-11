@@ -185,9 +185,13 @@ func ServerProperties() ([]Property, error) {
 			case 3:
 				p.Description = strings.TrimSpace(col.Text)
 				// Loop through each significant value, appending them to the Possible
-				// field of the Values field of the p instance
+				// field of the Values field of the p instance. If property is boolean,
+				// this is unnecessary.
+				if p.Type == "boolean" {
+					return
+				}
 				col.ForEach(`dl dd`, func(_ int, val *colly.HTMLElement) {
-					t := val.ChildText(`b`)
+					t := val.ChildText(`b:first-child`)
 					// Don't append empty values, as they are coded in the markdown of the
 					// website, and also don't append Note notices, as they are inside the same
 					// tag structure in the HTML
