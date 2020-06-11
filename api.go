@@ -58,7 +58,9 @@ func GetAllProperties(p []Property) func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
-		data, _ := json.Marshal(p)
+		data, _ := json.Marshal(struct {
+			Properties []Property `json:"properties"`
+		}{p})
 		w.WriteHeader(http.StatusOK)
 		w.Write(data)
 	}
