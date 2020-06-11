@@ -7,7 +7,8 @@ Find useful information about Minecraft's Java Edition server configuration file
 Make a simple GET request and decode the JSON response!
 
 To get the whole documentation: `GET http://api.mcbonanza.games/serverproperties/v1/`<br>
-To get a single key: `GET http://api.mcbonanza.games/serverproperties/v1/{key}`, where `{key}` is a valid server.properties key.
+To get a single key: `GET http://api.mcbonanza.games/serverproperties/v1/{key}`, where `{key}` is a valid server.properties key.<br>
+To get metadata (such as the default limit value and the possible value types): `GET http://api.mcbonanza.games/serverproperties/v1/meta/`
 
 ### Response examples
 
@@ -15,6 +16,11 @@ To get a single key: `GET http://api.mcbonanza.games/serverproperties/v1/{key}`,
 
 ```json
 {
+  "options": {
+    "contains": "",
+    "type": "",
+    "upcoming": ""
+  },
   "properties": [
     {
       "name": "allow-flight",
@@ -25,14 +31,49 @@ To get a single key: `GET http://api.mcbonanza.games/serverproperties/v1/{key}`,
         "max": 1,
         "possible": ["false", "true"]
       },
-      "description": "Allows users to ...", // complete description
+      "description": "Allows users to ...",
       "upcoming": false,
       "upcomingVersion": ""
     }
-    // rest of keys
+    ...
   ]
 }
 ```
+
+You can filter your requests with the provided options!
+
+- `contains` option only returns the properties that contain the substring the key is attributed
+- `type` option only returns the properties of the requested type
+- `upcoming` option only returns properties that are going to be implemented in future versions, if `"true"`, or only properties currently available, if `"false"`
+
+_Example request_: `GET http://api.mcbonanza.games/serverproperties/v1/?upcoming=true&type=integer`
+
+```json
+{
+  "options": {
+    "contains": "",
+    "type": "integer",
+    "upcoming": "true"
+  },
+  "properties": [
+    {
+      "name": "entity-broadcast-range-percentage",
+      "type": "integer",
+      "defaultValue": "100",
+      "values": {
+        "min": 0,
+        "max": 500,
+        "possible": []
+      },
+      "description": "Controls how close ...",
+      "upcoming": true,
+      "upcomingVersion": "JE 1.16"
+    }
+  ]
+}
+```
+
+If there is no property that matches your options, an empty array will be returned.
 
 - **Single key** (on `GET http://api.mcbonanza.games/serverproperties/v1/difficulty`)
 
@@ -46,7 +87,7 @@ To get a single key: `GET http://api.mcbonanza.games/serverproperties/v1/{key}`,
     "max": -2147483648,
     "possible": ["peaceful", "easy", "normal", "hard"]
   },
-  "description": "Defines the difficulty ...", // complete description
+  "description": "Defines the difficulty ...",
   "upcoming": false,
   "upcomingVersion": ""
 }
@@ -68,8 +109,8 @@ To get a single key: `GET http://api.mcbonanza.games/serverproperties/v1/{key}`,
 ## How it works
 
 The API scrapes the official Minecraft Wiki page (specifically the [server.properties page](https://minecraft.gamepedia.com/Server.properties)), also evaluating
-the mentioned values and limits a property can be assigned. The math expressions are evaluated using [math.js web service](https://api.mathjs.org/). All the
-properties are then stored in a list, which is accessed on each client request.
+the mentioned values and limits a property can be assigned. The math expressions are evaluated using [math.js web service](https://api.mathjs.org/). Then the data
+is sent to the user, caching it if possible.
 
 ## Contributions
 

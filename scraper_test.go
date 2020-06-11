@@ -6,7 +6,7 @@ import (
 )
 
 func TestServerProperties(t *testing.T) {
-	prop, err := ServerProperties()
+	prop, err := ServerProperties(Options{})
 	if err != nil {
 		t.Errorf("Failed. Error: %v\n", err)
 	}

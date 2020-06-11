@@ -7,6 +7,22 @@ Accept: application/xml
 
 ###
 
+GET http://localhost:80/serverproperties/v1/?upcoming=true
+
+###
+
+GET  http://localhost:80/serverproperties/v1/?contains=enable&upcoming=false
+
+###
+
+GET http://localhost:80/serverproperties/v1/?type=integer
+
+###
+
+GET http://localhost:80/serverproperties/v1/?contains=sarmlae
+
+###
+
 GET http://localhost:80/serverproperties/v1/sarmale
 
 ###
