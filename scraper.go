@@ -22,10 +22,10 @@ const (
 	minecraftIntegerTypename        = "integer"
 	minecraftStringType             = "string"
 	limitMalformedErrorFormatString = " limit number malformed, failed to convert to integer, error: %v"
-	// PropertyDefaultLimitValue is the value that the Min and Max fields of the
+	// propertyDefaultLimitValue is the value that the Min and Max fields of the
 	// PropertyValues struct are assigned by default. It is the minimum signed
 	// 32-bit possible integer value.
-	PropertyDefaultLimitValue = -int(^uint32(0)>>1) - 1
+	propertyDefaultLimitValue = -int(^uint32(0)>>1) - 1
 )
 
 // The PropertyValues struct represents the legal values that a
@@ -34,17 +34,17 @@ const (
 // it can have, and the possible values it may have.
 //
 //
-// By default, Min and Max are PropertyDefaultLimitValue, and Possible is
-// an empty slice. Min and Max must be both PropertyDefaultLimitValue
+// By default, Min and Max are propertyDefaultLimitValue, and Possible is
+// an empty slice. Min and Max must be both propertyDefaultLimitValue
 // or have any other value assigned!
-// If Min and Max are PropertyDefaultLimitValue, but Possible isn't empty,
+// If Min and Max are propertyDefaultLimitValue, but Possible isn't empty,
 // then the key must have one of the values stored in Possible.
 //
-// If Min and Max are assigned different values than PropertyDefaultLimitValue,
+// If Min and Max are assigned different values than propertyDefaultLimitValue,
 // and the Possible slice is empty, then the key must have any value
 // in the interval [Min, Max].
 //
-// If Min and Max are assigned different values than PropertyDefaultLimitValue,
+// If Min and Max are assigned different values than propertyDefaultLimitValue,
 // and the Possible slice isn't empty, then the key must have either
 // the values stored in the Possible slice, or values in the interval [Min, Max].
 // The values stored in Possible may have a special significance in this case,
@@ -104,8 +104,8 @@ func ServerProperties() ([]Property, error) {
 		// mentioned in the documentation.
 		p := Property{
 			Values: PropertyValues{
-				Min:      PropertyDefaultLimitValue,
-				Max:      PropertyDefaultLimitValue,
+				Min:      propertyDefaultLimitValue,
+				Max:      propertyDefaultLimitValue,
 				Possible: []string{},
 			},
 		}
@@ -165,15 +165,15 @@ func ServerProperties() ([]Property, error) {
 							// This point shall not be reached, as the numbers can be malformed
 							// only if the regexp is incorrect. The error is handled for the
 							// same reason as above.
-							p.Values.Max = PropertyDefaultLimitValue
+							p.Values.Max = propertyDefaultLimitValue
 							limitErr = fmt.Errorf("upper"+limitMalformedErrorFormatString, err)
 							return
 						}
 					}
 					p.Values.Min, err = strconv.Atoi(values[0])
 					if err != nil {
-						p.Values.Min = PropertyDefaultLimitValue
-						p.Values.Max = PropertyDefaultLimitValue
+						p.Values.Min = propertyDefaultLimitValue
+						p.Values.Max = propertyDefaultLimitValue
 						limitErr = fmt.Errorf("lower"+limitMalformedErrorFormatString, err)
 						return
 					}
