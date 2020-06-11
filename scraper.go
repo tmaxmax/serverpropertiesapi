@@ -14,14 +14,13 @@ import (
 )
 
 const (
-	mathAPI                         = "http://api.mathjs.org/v4/"
-	querySelector                   = `[data-description="Server properties"]:not([data-description="Server properties"] ~ [data-description="Server properties"]) tr:not(:first-child)`
-	regexpLimits                    = `(\d+[-–](?:\d+|\(\d+([+\-*/^]\d+[ ]?[+\-*/^][ ]?\d+)?\)))`
-	regexpLimitsNotCalculated       = `\d+[+\-*/^]\d+ ?[+\-*/^]? ?\d+?`
-	minecraftBooleanTypename        = "boolean"
-	minecraftIntegerTypename        = "integer"
-	minecraftStringType             = "string"
-	limitMalformedErrorFormatString = " limit number malformed, failed to convert to integer, error: %v"
+	mathAPI                   = "http://api.mathjs.org/v4/"
+	querySelector             = `[data-description="Server properties"]:not([data-description="Server properties"] ~ [data-description="Server properties"]) tr:not(:first-child)`
+	regexpLimits              = `(\d+[-–](?:\d+|\(\d+([+\-*/^]\d+[ ]?[+\-*/^][ ]?\d+)?\)))`
+	regexpLimitsNotCalculated = `\d+[+\-*/^]\d+ ?[+\-*/^]? ?\d+?`
+	minecraftBooleanTypename  = "boolean"
+	minecraftIntegerTypename  = "integer"
+	minecraftStringType       = "string"
 	// propertyDefaultLimitValue is the value that the Min and Max fields of the
 	// PropertyValues struct are assigned by default. It is the minimum signed
 	// 32-bit possible integer value.
@@ -67,6 +66,15 @@ type Property struct {
 	UpcomingVersion string         `json:"upcomingVersion"`
 }
 
+// The Options struct contains parameters used when scraping the wiki,
+// to only get relevant properties.
+type Options struct {
+	Contains  string `json:"contains"`
+	exactName string
+	Type      string `json:"type"`
+	Upcoming  string `json:"upcoming"`
+}
+
 // evaluateMath computes the result of a string expression, using the
 // mathjs API: https://api.mathjs.org/
 //
@@ -87,10 +95,26 @@ func evaluateMath(e string) (int, error) {
 	return int(calcConv), nil
 }
 
+// ServerProperty scrapes the official Minecraft Wiki and extracts
+// the Java Server Property with the key name identical to the exactName
+// string parameter. Returns an empty instance and a "not found" error.
+func ServerProperty(exactName string) (Property, error) {
+	found, err := ServerProperties(Options{
+		exactName: exactName,
+	})
+	if err != nil {
+		return Property{}, err
+	}
+	if len(found) == 0 {
+		return Property{}, fmt.Errorf("not found")
+	}
+	return found[0], nil
+}
+
 // ServerProperties scrapes the official Minecraft Wiki and extracts
 // the Java Server Properties, returning a slice with the keys and their
 // respective documentation.
-func ServerProperties() ([]Property, error) {
+func ServerProperties(o Options) ([]Property, error) {
 	prop := make([]Property, 0, 50)
 	limitErr := error(nil)
 
@@ -109,18 +133,38 @@ func ServerProperties() ([]Property, error) {
 				Possible: []string{},
 			},
 		}
+		valid := true
 		// Loop through each row column and gather the information.
 		// i is the column number, counting starts from 0. As of 6/10/2020,
 		// the key name is on the first column (i = 0), the value type on the second,
 		// the default value on the third and the description and possible values
 		// on the fourth.
 		row.ForEach(`td`, func(i int, col *colly.HTMLElement) {
+			// Don't execute if the property is already invalid
+			if !valid {
+				return
+			}
+
 			switch i {
 			case 0:
 				p.Name = col.ChildText(`b`)
+				// If the name doesn't contain the specified string, or if it isn't equal to the name requested,
+				// mark as invalid
+				if o.Contains != "" && !strings.Contains(p.Name, o.Contains) || o.exactName != "" && p.Name != o.exactName {
+					valid = false
+					return
+				}
 				if strings.Contains(col.ChildText(`sup > i > span`), "upcoming") {
+					// If upcoming features aren't requested, mark as invalid
+					if o.Upcoming == "false" {
+						valid = false
+						return
+					}
 					p.Upcoming = true
 					p.UpcomingVersion = col.ChildText(`sup > i > a`)
+				} else if o.Upcoming == "true" {
+					valid = false
+					return
 				}
 			case 1:
 				rawType := strings.TrimSpace(col.Text)
@@ -130,6 +174,12 @@ func ServerProperties() ([]Property, error) {
 					p.Values.Max = 1
 				} else if strings.Contains(rawType, minecraftIntegerTypename) {
 					p.Type = minecraftIntegerTypename
+
+					if o.Type != "" && p.Type != o.Type {
+						// If the type requested isn't minecraftIntegerTypename, mark as invalid
+						valid = false
+						return
+					}
 
 					// The three regexps are used to get the limits string, split into two separate values and extract
 					// the upper limit into an evaluable expression, when it isn't a number.
@@ -146,39 +196,29 @@ func ServerProperties() ([]Property, error) {
 					}
 
 					// Get the two values.
-					// Also initialize the error variable
-					values, err := rs.Split(l, 2), error(nil)
+					values := rs.Split(l, 2)
 					// Evaluate the upper limit expression, if necessary
 					if e := ru.FindString(values[1]); e != "" {
 						result, err := evaluateMath(e)
 						if err != nil {
-							// This point can be reached only if the website format changes.
-							// Exiting the function assures that Min and Mac are both -1 or
+							// This point can be reached only if the mathjs API is down.
+							// Exiting the function assures that Min and Max are both -1 or
 							// both assigned another value
 							limitErr = fmt.Errorf("upper limit expression failed to evaluate, error: %v", err)
 							return
 						}
 						p.Values.Max = result
 					} else {
-						p.Values.Max, err = strconv.Atoi(values[1])
-						if err != nil {
-							// This point shall not be reached, as the numbers can be malformed
-							// only if the regexp is incorrect. The error is handled for the
-							// same reason as above.
-							p.Values.Max = propertyDefaultLimitValue
-							limitErr = fmt.Errorf("upper"+limitMalformedErrorFormatString, err)
-							return
-						}
+						p.Values.Max, _ = strconv.Atoi(values[1])
 					}
-					p.Values.Min, err = strconv.Atoi(values[0])
-					if err != nil {
-						p.Values.Min = propertyDefaultLimitValue
-						p.Values.Max = propertyDefaultLimitValue
-						limitErr = fmt.Errorf("lower"+limitMalformedErrorFormatString, err)
-						return
-					}
+					p.Values.Min, _ = strconv.Atoi(values[0])
 				} else if rawType == minecraftStringType {
 					p.Type = minecraftStringType
+				}
+				// If the property isn't of specified type,
+				if o.Type != "" && p.Type != o.Type {
+					valid = false
+					return
 				}
 			case 2:
 				p.Default = strings.TrimSpace(col.Text)
@@ -202,8 +242,10 @@ func ServerProperties() ([]Property, error) {
 				})
 			}
 		})
-		// Finally, append the property instance to the return slice
-		prop = append(prop, p)
+		// Finally, append the property instance to the return slice, if it is valid
+		if valid {
+			prop = append(prop, p)
+		}
 	})
 
 	// Visit the website, to gather the properties
