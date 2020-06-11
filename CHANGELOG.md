@@ -5,7 +5,7 @@
 ### Added
 
 - API endpoint for requesting metadata, such as property types and limit default value
-- Unsupported HTTP methods are now handled
+- Unsupported HTTP methods now have their own handler function
 
 ## [1.0.1]
 

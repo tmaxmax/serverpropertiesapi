@@ -18,7 +18,7 @@ func TestServerProperties(t *testing.T) {
 			t.Errorf("\tFailed on property %d, one or more fields are empty. Check if website format hasn't changed!\nProperty instance: %+v\n", i, p)
 		}
 		// This is to assure that the limits have the default value if they are not mentioned in the documentation.
-		if p.Values.Min == PropertyDefaultLimitValue && p.Values.Max != p.Values.Min {
+		if p.Values.Min == propertyDefaultLimitValue && p.Values.Max != p.Values.Min {
 			t.Errorf("\tFailed on property %d, invalid Min and Max.\np.Values.Min = %d, p.Values.Max = %d\n", i, p.Values.Min, p.Values.Max)
 		}
 		// If the feature isn't going to be added in an upcoming version, but the UpcomingVersion string isn't empty,
