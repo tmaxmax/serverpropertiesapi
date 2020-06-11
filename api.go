@@ -3,6 +3,7 @@ package serverpropertiesapi
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -19,12 +20,12 @@ func checkRequest(r *http.Request) []Error {
 	var ret []Error
 
 	// Check if the client requests data in a supported format. If no format is provided,
-	// then the JSON format is automatically implied.
+	// or any format is accepted, application/json is implied.
 	accept := r.Header.Get("Accept")
-	if accept != "" && accept != "application/json" {
+	if accept != "" && accept != "*/*" && accept != "application/json" {
 		ret = append(ret, Error{
 			httpCode: http.StatusNotImplemented,
-			Error:    "501 Not Implemented, API does not support " + accept + " format.",
+			Error:    "501 Not Implemented, API does not support " + accept + " format",
 			Retry:    false,
 		})
 	}
@@ -102,5 +103,41 @@ func GetProperty(p []Property) func(w http.ResponseWriter, r *http.Request) {
 		data, _ := json.Marshal(p[i])
 		w.WriteHeader(http.StatusOK)
 		w.Write(data)
+	}
+}
+
+func GetMetadata(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	errors := checkRequest(r)
+	if len(errors) != 0 {
+		writeErrors(errors, w)
+		return
+	}
+
+	data, _ := json.Marshal(struct {
+		Meta map[string]interface{} `json:"meta"`
+	}{Meta: map[string]interface{}{
+		"minecraftBooleanTypename":  minecraftBooleanTypename,
+		"minecraftIntegerTypename":  minecraftIntegerTypename,
+		"minecraftStringTypename":   minecraftStringType,
+		"propertyDefaultLimitValue": propertyDefaultLimitValue,
+	}})
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}
+
+func MethodNotAllowedHandler(allowed ...string) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		allowedMethods := strings.Join(allowed, ", ")
+		errors := checkRequest(r)
+		errors = append(errors, Error{
+			httpCode: http.StatusMethodNotAllowed,
+			Error:    "405 Status Method Not Allowed, can't use " + r.Method,
+			Retry:    false,
+		})
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Allowed", allowedMethods)
+		writeErrors(errors, w)
 	}
 }
