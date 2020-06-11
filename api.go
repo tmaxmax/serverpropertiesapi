@@ -8,10 +8,9 @@ import (
 )
 
 type Error struct {
-	httpCode   int
-	Error      string `json:"error"`
-	Retry      bool   `json:"retry"`
-	Suggestion string `json:"suggestion"`
+	httpCode int
+	Error    string `json:"error"`
+	Retry    bool   `json:"retry"`
 }
 
 // checkRequest checks the request header if the data necessary to make an API request is available
