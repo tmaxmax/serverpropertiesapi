@@ -1,23 +1,24 @@
-GET http://localhost:8080/serverproperties/v1/
-Accept: application/json
+GET http://localhost:80/serverproperties/v1/
 
 ###
 
-GET http://localhost:8080/serverproperties/v1/
-
-###
-
-GET http://localhost:8080/serverproperties/v1/
+GET http://localhost:80/serverproperties/v1/
 Accept: application/xml
 
 ###
 
-GET http://localhost:8080/serverproperties/v1/sarmale
-Accept: application/json
+GET http://localhost:80/serverproperties/v1/sarmale
 
 ###
 
-GET http://localhost:8080/serverproperties/v1/allow-flight
-Accept: application/json
+GET http://localhost:80/serverproperties/v1/allow-flight
+
+###
+
+GET http://localhost:80/serverproperties/v1/meta/
+
+###
+
+POST http://localhost:80/serverproperties/v1/
 
 ###
