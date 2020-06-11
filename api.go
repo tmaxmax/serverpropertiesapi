@@ -14,6 +14,12 @@ type Error struct {
 	Retry    bool   `json:"retry"`
 }
 
+var internalServerError = Error{
+	httpCode: http.StatusInternalServerError,
+	Error:    "500 Internal Server Error, failed to get information",
+	Retry:    false,
+}
+
 // checkRequest checks the request header if the data necessary to make an API request is available
 // It returns an Error slice, which contains all the problems found in the request.
 func checkRequest(r *http.Request) []Error {
@@ -48,62 +54,77 @@ func writeErrors(errors []Error, w http.ResponseWriter) {
 // GetAllProperties is a higher order function that has as parameter the a Property slice,
 // which is used to send the information the client requests. It returns a function that
 // shall be used as a handler for GET requests of all properties.
-func GetAllProperties(p []Property) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+func GetAllProperties(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
-		errors := checkRequest(r)
-		if len(errors) != 0 {
-			writeErrors(errors, w)
-			return
-		}
-
-		data, _ := json.Marshal(struct {
-			Properties []Property `json:"properties"`
-		}{p})
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
+	errors := checkRequest(r)
+	if len(errors) != 0 {
+		writeErrors(errors, w)
+		return
 	}
+
+	filters := r.URL.Query()
+	opt := Options{
+		Contains:  filters.Get("contains"),
+		exactName: "",
+		Type:      filters.Get("type"),
+		Upcoming:  filters.Get("upcoming"),
+	}
+	p, err := ServerProperties(opt)
+	if err != nil {
+		writeErrors([]Error{internalServerError}, w)
+		return
+	}
+	if len(p) == 0 {
+		writeErrors([]Error{{
+			httpCode: http.StatusNotFound,
+			Error:    "404 Not Found, there are no properties satisfying your filters",
+			Retry:    false,
+		}}, w)
+		return
+	}
+
+	data, _ := json.Marshal(struct {
+		Options    Options    `json:"options"`
+		Properties []Property `json:"properties"`
+	}{Options: opt, Properties: p})
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
 
-func GetProperty(p []Property) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+func GetProperty(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
-		errors := checkRequest(r)
-		if len(errors) != 0 {
-			writeErrors(errors, w)
-			return
-		}
+	errors := checkRequest(r)
+	if len(errors) != 0 {
+		writeErrors(errors, w)
+		return
+	}
 
-		// Get the requested key
-		pathParams := mux.Vars(r)
-		name := pathParams["key"]
+	// Get the requested key
+	pathParams := mux.Vars(r)
+	name := pathParams["key"]
 
-		// Find the Property instance with the given name
-		var i int
-		for i = 0; i < len(p) && p[i].Name != name; i++ {
-		}
-		if i == len(p) {
-			// If it's not found, append a Not Found error to the errors list
-			errors = append(errors, Error{
+	// Find the Property instance with the given name
+	p, err := ServerProperty(name)
+	if err != nil {
+		if err.Error() == "not found" {
+			writeErrors([]Error{{
 				httpCode: http.StatusNotFound,
 				Error:    "404 Not Found, key \"" + name + "\" doesn't exist",
 				Retry:    false,
-			})
-		}
-
-		if len(errors) != 0 {
-			writeErrors(errors, w)
+			}}, w)
 			return
 		}
-
-		// If this point is reached, there are no errors.
-		// Send the Property instance to the client.
-		data, _ := json.Marshal(p[i])
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
+		writeErrors([]Error{internalServerError}, w)
+		return
 	}
+
+	// If this point is reached, there are no errors.
+	// Send the Property instance to the client.
+	data, _ := json.Marshal(p)
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
 
 func GetMetadata(w http.ResponseWriter, r *http.Request) {
