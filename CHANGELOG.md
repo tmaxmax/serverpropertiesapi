@@ -1,18 +1,25 @@
 # Changelog
 
+## [1.1.0]
+
+### Added
+
+- API endpoint for requesting metadata, such as property types and limit default value
+- Unsupported HTTP methods are now handled
+
 ## [1.0.1]
 
 ### Added
 
-- The project now has a changelog.
+- The project now has a changelog
 
 ### Changed
 
-- Scraper ignores possible values for boolean properties, as they are redundant.
+- Scraper ignores possible values for boolean properties, as they are redundant
 
 ### Fixed
 
-- Scraper now picks up the possible values correctly.
+- Scraper now picks up the possible values correctly
 
 ## [1.0.0]
 
