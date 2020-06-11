@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.2.0]
+
+### Added
+
+- API endpoint for requesting from the whole documentation now supports options to filter the results (see [README.md](README.md))
+
+### Changed
+
+- API now scrapes the website on each request, if not cached (this ensures the information is always up to date)
+- Requests are cached for 24 hours
+
 ## [1.1.0]
 
 ### Added
@@ -28,6 +39,6 @@ This is the first API release
 ### Added
 
 - Implemented the Minecraft Gamepedia Wiki server.properties page scraper
-- API endpoint for requesting the whole documentation
+- API endpoint for requesting from whole documentation
 - API endpoint for requesting the documentation of a single key
 - API error handling for requesting unsupported file formats and inexistent resources
