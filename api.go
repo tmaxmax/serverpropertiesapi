@@ -75,14 +75,6 @@ func GetAllProperties(w http.ResponseWriter, r *http.Request) {
 		writeErrors([]Error{internalServerError}, w)
 		return
 	}
-	if len(p) == 0 {
-		writeErrors([]Error{{
-			httpCode: http.StatusNotFound,
-			Error:    "404 Not Found, there are no properties satisfying your filters",
-			Retry:    false,
-		}}, w)
-		return
-	}
 
 	data, _ := json.Marshal(struct {
 		Options    Options    `json:"options"`
