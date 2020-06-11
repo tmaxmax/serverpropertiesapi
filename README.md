@@ -1,6 +1,6 @@
 # Minecraft Server Properties API
 
-Find useful information about Minecraft's server configuration file, server.properties, with this simple, RESTful API!
+Find useful information about Minecraft's Java Edition server configuration file, server.properties, with this simple, RESTful API!
 
 ## Usage
 
