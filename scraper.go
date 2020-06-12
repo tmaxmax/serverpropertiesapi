@@ -69,10 +69,31 @@ type Property struct {
 // The Options struct contains parameters used when scraping the wiki,
 // to only get relevant properties.
 type Options struct {
-	Contains  string `json:"contains"`
+	Contains  []string `json:"contains"`
 	exactName string
-	Type      string `json:"type"`
-	Upcoming  string `json:"upcoming"`
+	Types     []string `json:"types"`
+	Upcoming  string   `json:"upcoming"`
+}
+
+func (o Options) Valid() bool {
+	if o.Upcoming != "" && o.Upcoming != "true" && o.Upcoming != "false" {
+		return false
+	}
+	for _, t := range o.Types {
+		if t != minecraftStringType && t != minecraftIntegerTypename && t != minecraftBooleanTypename {
+			return false
+		}
+	}
+	return true
+}
+
+func find(f string, v []string, comp func(a string, b string) bool) bool {
+	for i := range v {
+		if comp(f, v[i]) {
+			return true
+		}
+	}
+	return false
 }
 
 // evaluateMath computes the result of a string expression, using the
@@ -150,7 +171,10 @@ func ServerProperties(o Options) ([]Property, error) {
 				p.Name = col.ChildText(`b`)
 				// If the name doesn't contain the specified string, or if it isn't equal to the name requested,
 				// mark as invalid
-				if o.Contains != "" && !strings.Contains(p.Name, o.Contains) || o.exactName != "" && p.Name != o.exactName {
+
+				if len(o.Contains) != 0 && !find(p.Name, o.Contains, func(a string, b string) bool {
+					return strings.Contains(a, b)
+				}) || o.exactName != "" && p.Name != o.exactName {
 					valid = false
 					return
 				}
@@ -175,7 +199,9 @@ func ServerProperties(o Options) ([]Property, error) {
 				} else if strings.Contains(rawType, minecraftIntegerTypename) {
 					p.Type = minecraftIntegerTypename
 
-					if o.Type != "" && p.Type != o.Type {
+					if len(o.Types) != 0 && !find(p.Type, o.Types, func(a string, b string) bool {
+						return a == b
+					}) {
 						// If the type requested isn't minecraftIntegerTypename, mark as invalid
 						valid = false
 						return
@@ -216,7 +242,9 @@ func ServerProperties(o Options) ([]Property, error) {
 					p.Type = minecraftStringType
 				}
 				// If the property isn't of specified type,
-				if o.Type != "" && p.Type != o.Type {
+				if len(o.Types) != 0 && !find(p.Type, o.Types, func(a string, b string) bool {
+					return a == b
+				}) {
 					valid = false
 					return
 				}
