@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.2.1]
+
+### Added
+
+- Filter values can now be comma-separated
+- The responses are sent gzipped if the client supports it
+
+### Changed
+
+- Marshaled JSON is now indented
+
+### Fixed
+
+- Wrong header key for Content-Type fixed, was Content-Types
+- Filter values are now validated, the API returning a 400 Bad Request error when they are invalid.
+
 ## [1.2.0]
 
 ### Added
