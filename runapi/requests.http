@@ -1,4 +1,5 @@
 GET http://localhost:80/serverproperties/v1/
+Accept-Encoding: gzip
 
 ###
 
@@ -12,6 +13,14 @@ GET http://localhost:80/serverproperties/v1/?upcoming=true
 ###
 
 GET  http://localhost:80/serverproperties/v1/?contains=enable&upcoming=false
+
+###
+
+GET http://localhost:80/serverproperties/v1/?contains=enable,sarmale,mama&contains=pvp,nether
+
+###
+
+GET http://localhost:80/serverproperties/v1/?contains=a,b&types=string&types=integer
 
 ###
 

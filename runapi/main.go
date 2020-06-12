@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/NYTimes/gziphandler"
+
 	cache "github.com/victorspringer/http-cache"
 
 	"github.com/victorspringer/http-cache/adapter/memory"
@@ -26,12 +28,12 @@ func main() {
 	r := mux.NewRouter()
 	api := r.PathPrefix("/serverproperties/v1").Subrouter()
 
-	api.Handle("/", cacheClient.Middleware(http.HandlerFunc(spa.GetAllProperties))).Methods(http.MethodGet)
-	api.Handle("/{key}", cacheClient.Middleware(http.HandlerFunc(spa.GetProperty))).Methods(http.MethodGet)
-	api.Handle("/meta/", cacheClient.Middleware(http.HandlerFunc(spa.GetMetadata))).Methods(http.MethodGet)
-	api.HandleFunc("/", spa.MethodNotAllowedHandler(http.MethodGet))
-	api.HandleFunc("/{key}", spa.MethodNotAllowedHandler(http.MethodGet))
-	api.HandleFunc("/meta/", spa.MethodNotAllowedHandler(http.MethodGet))
+	api.Handle("/", cacheClient.Middleware(gziphandler.GzipHandler(http.HandlerFunc(spa.GetAllProperties)))).Methods(http.MethodGet)
+	api.Handle("/{key}", cacheClient.Middleware(gziphandler.GzipHandler(http.HandlerFunc(spa.GetProperty)))).Methods(http.MethodGet)
+	api.Handle("/meta/", cacheClient.Middleware(gziphandler.GzipHandler(http.HandlerFunc(spa.GetMetadata)))).Methods(http.MethodGet)
+	api.Handle("/", gziphandler.GzipHandler(http.HandlerFunc(spa.MethodNotAllowedHandler(http.MethodGet))))
+	api.Handle("/{key}", gziphandler.GzipHandler(http.HandlerFunc(spa.MethodNotAllowedHandler(http.MethodGet))))
+	api.Handle("/meta/", gziphandler.GzipHandler(http.HandlerFunc(spa.MethodNotAllowedHandler(http.MethodGet))))
 
 	log.Fatalln(http.ListenAndServe(":80", r))
 }

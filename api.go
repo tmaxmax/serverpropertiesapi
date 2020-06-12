@@ -20,6 +20,23 @@ var internalServerError = Error{
 	Retry:    false,
 }
 
+// makeCompleteArray transforms a slice that contains elements which are made of comma separated strings
+// into a slice that contains all the elements on a different position
+//
+// Example: ["a", "b,c", "d,e,f"] -> ["a", "b", "c", "d", "e", "f"]
+func makeCompleteArray(a []string) []string {
+	b := make([]string, len(a))
+	copy(b, a)
+	for i := 0; i < len(b); i++ {
+		c := strings.Split(b[i], ",")
+		if len(c) > 1 {
+			b = append(b[:i], append(c, b[i+1:]...)...)
+			i += len(c) - 1
+		}
+	}
+	return b
+}
+
 // checkRequest checks the request header if the data necessary to make an API request is available
 // It returns an Error slice, which contains all the problems found in the request.
 func checkRequest(r *http.Request) []Error {
@@ -44,9 +61,9 @@ func checkRequest(r *http.Request) []Error {
 //
 // Always check if there are any errors before calling writeErrors!
 func writeErrors(errors []Error, w http.ResponseWriter) {
-	data, _ := json.Marshal(struct {
+	data, _ := json.MarshalIndent(struct {
 		Errors []Error `json:"errors"`
-	}{errors})
+	}{errors}, "", "  ")
 	w.WriteHeader(errors[0].httpCode)
 	w.Write(data)
 }
@@ -55,7 +72,7 @@ func writeErrors(errors []Error, w http.ResponseWriter) {
 // which is used to send the information the client requests. It returns a function that
 // shall be used as a handler for GET requests of all properties.
 func GetAllProperties(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Add("Content-Type", "application/json")
 
 	errors := checkRequest(r)
 	if len(errors) != 0 {
@@ -65,10 +82,18 @@ func GetAllProperties(w http.ResponseWriter, r *http.Request) {
 
 	filters := r.URL.Query()
 	opt := Options{
-		Contains:  filters.Get("contains"),
+		Contains:  makeCompleteArray(filters["contains"]),
 		exactName: "",
-		Type:      filters.Get("type"),
+		Types:     makeCompleteArray(filters["types"]),
 		Upcoming:  filters.Get("upcoming"),
+	}
+	if !opt.Valid() {
+		writeErrors([]Error{{
+			httpCode: http.StatusBadRequest,
+			Error:    "400 Bad Request, options are not valid",
+			Retry:    false,
+		}}, w)
+		return
 	}
 	p, err := ServerProperties(opt)
 	if err != nil {
@@ -76,16 +101,16 @@ func GetAllProperties(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, _ := json.Marshal(struct {
+	data, _ := json.MarshalIndent(struct {
 		Options    Options    `json:"options"`
 		Properties []Property `json:"properties"`
-	}{Options: opt, Properties: p})
+	}{Options: opt, Properties: p}, "", "  ")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
 
 func GetProperty(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Add("Content-Type", "application/json")
 
 	errors := checkRequest(r)
 	if len(errors) != 0 {
@@ -120,7 +145,7 @@ func GetProperty(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetMetadata(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Add("Content-Type", "application/json")
 
 	errors := checkRequest(r)
 	if len(errors) != 0 {
@@ -128,14 +153,14 @@ func GetMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, _ := json.Marshal(struct {
+	data, _ := json.MarshalIndent(struct {
 		Meta map[string]interface{} `json:"meta"`
 	}{Meta: map[string]interface{}{
 		"minecraftBooleanTypename":  minecraftBooleanTypename,
 		"minecraftIntegerTypename":  minecraftIntegerTypename,
 		"minecraftStringTypename":   minecraftStringType,
 		"propertyDefaultLimitValue": propertyDefaultLimitValue,
-	}})
+	}}, "", "  ")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
