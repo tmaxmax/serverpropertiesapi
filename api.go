@@ -3,6 +3,7 @@ package serverpropertiesapi
 import (
 	"encoding/json"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -14,11 +15,19 @@ type Error struct {
 	Retry    bool   `json:"retry"`
 }
 
-var internalServerError = Error{
-	httpCode: http.StatusInternalServerError,
-	Error:    "500 Internal Server Error, failed to get information",
-	Retry:    false,
-}
+var (
+	internalServerError = Error{
+		httpCode: http.StatusInternalServerError,
+		Error:    "500 Internal Server Error, failed to get information",
+		Retry:    false,
+	}
+	metaInformation = map[string]interface{}{
+		"minecraftBooleanTypename":  minecraftBooleanTypename,
+		"minecraftIntegerTypename":  minecraftIntegerTypename,
+		"minecraftStringTypename":   minecraftStringType,
+		"propertyDefaultLimitValue": propertyDefaultLimitValue,
+	}
+)
 
 // makeCompleteArray transforms a slice that contains elements which are made of comma separated strings
 // into a slice that contains all the elements on a different position
@@ -42,13 +51,26 @@ func makeCompleteArray(a []string) []string {
 func checkRequest(r *http.Request) []Error {
 	var ret []Error
 
+	// Get the accepted formats string
+	acceptHeader := r.Header.Get("Accept")
+
+	// Construct the split regex, used to split the header Accept string value
+	// into all the requested formats
+	split := regexp.MustCompile(`,[ ]?|;[ ]?[qv]=([^,;]+)`)
+
 	// Check if the client requests data in a supported format. If no format is provided,
 	// or any format is accepted, application/json is implied.
-	accept := r.Header.Get("Accept")
-	if accept != "" && accept != "*/*" && accept != "application/json" {
+	accept, i := split.Split(acceptHeader, -1), 0
+	for ; i < len(accept); i++ {
+		if accept[i] == "*/*" || accept[i] == "application/json" {
+			break
+		}
+	}
+
+	if len(accept) != 0 && i == len(accept) {
 		ret = append(ret, Error{
 			httpCode: http.StatusNotImplemented,
-			Error:    "501 Not Implemented, API does not support " + accept + " format",
+			Error:    "501 Not Implemented, API does not support " + acceptHeader + " format",
 			Retry:    false,
 		})
 	}
@@ -60,7 +82,7 @@ func checkRequest(r *http.Request) []Error {
 // The response status code will be the httpCode of the first error.
 //
 // Always check if there are any errors before calling writeErrors!
-func writeErrors(errors []Error, w http.ResponseWriter) {
+func writeErrors(w http.ResponseWriter, errors ...Error) {
 	data, _ := json.MarshalIndent(struct {
 		Errors []Error `json:"errors"`
 	}{errors}, "", "  ")
@@ -76,7 +98,7 @@ func GetAllProperties(w http.ResponseWriter, r *http.Request) {
 
 	errors := checkRequest(r)
 	if len(errors) != 0 {
-		writeErrors(errors, w)
+		writeErrors(w, errors...)
 		return
 	}
 
@@ -88,16 +110,16 @@ func GetAllProperties(w http.ResponseWriter, r *http.Request) {
 		Upcoming:  filters.Get("upcoming"),
 	}
 	if !opt.Valid() {
-		writeErrors([]Error{{
+		writeErrors(w, Error{
 			httpCode: http.StatusBadRequest,
 			Error:    "400 Bad Request, options are not valid",
 			Retry:    false,
-		}}, w)
+		})
 		return
 	}
 	p, err := ServerProperties(opt)
 	if err != nil {
-		writeErrors([]Error{internalServerError}, w)
+		writeErrors(w, internalServerError)
 		return
 	}
 
@@ -114,7 +136,7 @@ func GetProperty(w http.ResponseWriter, r *http.Request) {
 
 	errors := checkRequest(r)
 	if len(errors) != 0 {
-		writeErrors(errors, w)
+		writeErrors(w, errors...)
 		return
 	}
 
@@ -126,20 +148,20 @@ func GetProperty(w http.ResponseWriter, r *http.Request) {
 	p, err := ServerProperty(name)
 	if err != nil {
 		if err.Error() == "not found" {
-			writeErrors([]Error{{
+			writeErrors(w, Error{
 				httpCode: http.StatusNotFound,
 				Error:    "404 Not Found, key \"" + name + "\" doesn't exist",
 				Retry:    false,
-			}}, w)
+			})
 			return
 		}
-		writeErrors([]Error{internalServerError}, w)
+		writeErrors(w, internalServerError)
 		return
 	}
 
 	// If this point is reached, there are no errors.
 	// Send the Property instance to the client.
-	data, _ := json.Marshal(p)
+	data, _ := json.MarshalIndent(p, "", "  ")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
@@ -149,18 +171,13 @@ func GetMetadata(w http.ResponseWriter, r *http.Request) {
 
 	errors := checkRequest(r)
 	if len(errors) != 0 {
-		writeErrors(errors, w)
+		writeErrors(w, errors...)
 		return
 	}
 
 	data, _ := json.MarshalIndent(struct {
 		Meta map[string]interface{} `json:"meta"`
-	}{Meta: map[string]interface{}{
-		"minecraftBooleanTypename":  minecraftBooleanTypename,
-		"minecraftIntegerTypename":  minecraftIntegerTypename,
-		"minecraftStringTypename":   minecraftStringType,
-		"propertyDefaultLimitValue": propertyDefaultLimitValue,
-	}}, "", "  ")
+	}{metaInformation}, "", "  ")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
@@ -176,6 +193,6 @@ func MethodNotAllowedHandler(allowed ...string) func(w http.ResponseWriter, r *h
 		})
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Allowed", allowedMethods)
-		writeErrors(errors, w)
+		writeErrors(w, errors...)
 	}
 }
