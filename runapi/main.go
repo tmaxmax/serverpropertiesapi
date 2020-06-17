@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/NYTimes/gziphandler"
@@ -46,5 +45,5 @@ func main() {
 	sprop.Handle("/{key}", gziphandler.GzipHandler(http.HandlerFunc(spa.MethodNotAllowedHandler(http.MethodGet))))
 	sprop.Handle("/meta/", gziphandler.GzipHandler(http.HandlerFunc(spa.MethodNotAllowedHandler(http.MethodGet))))
 
-	log.Fatalln(http.ListenAndServeTLS(":443", os.Getenv("CERTFILE"), os.Getenv("KEYFILE"), r))
+	log.Fatalln(http.ListenAndServe(":80", r))
 }
