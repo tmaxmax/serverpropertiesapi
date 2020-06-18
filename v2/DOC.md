@@ -12,7 +12,7 @@ This is MC Bonanza's _server.properties_ reference API documentation. This API c
   This string value represents the type-name used to denote integral properties in the official documentation.
 - **Minecraft integer type:** `integer`  
   This string value represents the type-name used to denote integral properties in the official documentation.
-- **Minecraft string type:** `string`
+- **Minecraft string type:** `string`  
   This string value represents the type-name used to denote string properties in the official documentation.
 
 ## <a id="header"></a>Request header
