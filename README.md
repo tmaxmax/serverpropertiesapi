@@ -1,3 +1,7 @@
+| :exclamation: The v1 API has been deprecated, endpoints are no longer available! Use v2 instead! |
+| ------------------------------------------------------------------------------------------------ |
+
+
 # Minecraft Server Properties API
 
 Find useful information about Minecraft's Java Edition server configuration file, server.properties, with this simple, RESTful API!
@@ -6,19 +10,19 @@ Find useful information about Minecraft's Java Edition server configuration file
 
 Make a simple GET request and decode the JSON response!
 
-To get the whole documentation: `GET http://api.mcbonanza.games/serverproperties/v1/`<br>
-To get a single key: `GET http://api.mcbonanza.games/serverproperties/v1/{key}`, where `{key}` is a valid server.properties key.<br>
-To get metadata (such as the default limit value and the possible value types): `GET http://api.mcbonanza.games/serverproperties/v1/meta/`
+To get the whole documentation: `GET http://api.mcbonanza.games//v1serverproperties`  
+To get a single key: `GET http://api.mcbonanza.games/serverproperties/v1/{key}`, where `{key}` is a valid server.properties key.  
+To get metadata (such as the default limit value and the possible value types): `GET http://api.mcbonanza.games/v1/serverproperties/meta/`
 
 ### Response examples
 
-- **Whole documentation** (on `GET http://api.mcbonanza.games/serverproperties/v1/`)
+- **Whole documentation** (on `GET http://api.mcbonanza.games/v1/serverproperties`)
 
 ```json
 {
   "options": {
-    "contains": "",
-    "type": "",
+    "contains": [],
+    "type": [],
     "upcoming": ""
   },
   "properties": [
@@ -46,7 +50,7 @@ You can filter your requests with the provided options!
 - `type` option only returns the properties of the requested type
 - `upcoming` option only returns properties that are going to be implemented in future versions, if `"true"`, or only properties currently available, if `"false"`
 
-_Example request_: `GET http://api.mcbonanza.games/serverproperties/v1/?upcoming=true&type=integer`
+_Example request_: `GET http://api.mcbonanza.games/v1/serverproperties?upcoming=true&type=integer`
 
 ```json
 {
@@ -75,7 +79,7 @@ _Example request_: `GET http://api.mcbonanza.games/serverproperties/v1/?upcoming
 
 If there is no property that matches your options, an empty array will be returned.
 
-- **Single key** (on `GET http://api.mcbonanza.games/serverproperties/v1/difficulty`)
+- **Single key** (on `GET http://api.mcbonanza.games/v1/serverproperties/difficulty`)
 
 ```json
 {
@@ -93,7 +97,7 @@ If there is no property that matches your options, an empty array will be return
 }
 ```
 
-- **Error** (on `GET http://api.mcbonanza.games/serverproperties/v1/sarmale`). The errors are appended to the array in the order they occur.
+- **Error** (on `GET http://api.mcbonanza.games/v1/serverproperties/sarmale`). The errors are appended to the array in the order they occur.
 
 ```json
 {
@@ -109,8 +113,7 @@ If there is no property that matches your options, an empty array will be return
 ## How it works
 
 The API scrapes the official Minecraft Wiki page (specifically the [server.properties page](https://minecraft.gamepedia.com/Server.properties)), also evaluating
-the mentioned values and limits a property can be assigned. The math expressions are evaluated using [math.js web service](https://api.mathjs.org/). Then the data
-is sent to the user, caching it if possible.
+the mentioned values and limits a property can be assigned. The math expressions are evaluated using [math.js web service](https://api.mathjs.org/). Then the data is sent to the user, caching it if possible.
 
 ## Contributions
 
