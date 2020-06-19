@@ -3,18 +3,22 @@ package v2
 import (
 	"encoding/json"
 	"testing"
-
-	"golang.org/x/text/language"
 )
 
 func TestServerProperties(t *testing.T) {
-	var prop, err = ServerProperties(&Filters{
-		contains:  nil,
+	var prop, err = ServerProperties(&filters{
+		contains: map[string]bool{
+			"max":  true,
+			"time": false,
+		},
 		exactName: "",
-		language:  language.LatinAmericanSpanish,
-		sort:      nil,
-		types:     nil,
-		upcoming:  "",
+		sortMap: map[string]bool{
+			"name": true,
+		},
+		typesMap: map[string]bool{
+			"integer": true,
+		},
+		upcoming: "",
 	})
 	if err != nil {
 		t.Fatal(err)

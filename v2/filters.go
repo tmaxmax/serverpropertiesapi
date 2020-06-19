@@ -3,8 +3,6 @@ package v2
 import (
 	"sort"
 	"strings"
-
-	"golang.org/x/text/language"
 )
 
 const (
@@ -16,27 +14,9 @@ const (
 type filters struct {
 	contains  map[string]bool
 	exactName string
-	language  language.Tag
 	sortMap   map[string]bool
 	typesMap  map[string]bool
 	upcoming  string
-}
-
-func (f *filters) valid(types map[string]struct{}) bool {
-	for key := range f.typesMap {
-		if _, ok := types[key]; !ok {
-			return false
-		}
-	}
-	for key := range f.sortMap {
-		if key != filterName && key != filterType && key != filterUpcoming {
-			return false
-		}
-	}
-	if f.upcoming != "" && f.upcoming != "true" && f.upcoming != "false" {
-		return false
-	}
-	return true
 }
 
 func (f *filters) filter(p []Property) []Property {
@@ -61,8 +41,8 @@ func (f *filters) filter(p []Property) []Property {
 		}
 		if f.contains != nil {
 			doesntMatchFilter := false
-			for substr, negate := range f.contains {
-				if hasSubstr := strings.Contains(p[i].Name, substr); hasSubstr == negate {
+			for substr, shouldHave := range f.contains {
+				if strings.Contains(p[i].Name, substr) == !shouldHave {
 					doesntMatchFilter = true
 					break
 				}
