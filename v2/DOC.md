@@ -61,7 +61,7 @@ The response can also be sorted using the **sort** query:
 - `sort=type` will sort the response ascending, lexicographically by type
 - `sort=upcoming` will move the upcoming features to the end of the list
 
-You can inverse the sorting order by putting a `-` in front of the desired sorting category (for example, `sort=-name` will sort the response descending, lexicographically by property name).
+You can inverse the sorting order by putting a `-` in front of the desired sorting category (for example, `sort=-name` will sort the response descending, lexicographically by property name). Don't use any other characters, such as `+`, to manipulate the sorting order, as it will be ignored.
 
 Any other queries or unspecified query values are ignored by the API.
 
@@ -91,7 +91,7 @@ _Response:_
 
 ## <a id="errors"></a>Errors
 
-The API returns the first error encountered in a request in the [RFC 7087 format](https://tools.ietf.org/html/rfc7807#section-3.1). The client must also accept `application/problem+json` MIME-type as a response.
+The API returns the first error encountered in a request in the [RFC 7807 format](https://tools.ietf.org/html/rfc7807#section-3.1). The client must also accept `application/problem+json` MIME-type as a response.
 
 ### <a id="error-000"></a>Error code 000 - Property not found
 
