@@ -24,6 +24,13 @@ const (
 	wikiLink                  = "https://minecraft.gamepedia.com/Server.properties"
 )
 
+var metadata = map[string]interface{}{
+	"minecraftBooleanTypename":  minecraftBooleanTypename,
+	"minecraftIntegerTypename":  minecraftIntegerTypename,
+	"minecraftStringTypename":   minecraftStringTypename,
+	"propertyDefaultLimitValue": propertyDefaultLimitValue,
+}
+
 // The PropertyValues struct holds all the documented values of a property.
 type PropertyValues struct {
 	Default  string   `json:"default"`

@@ -19,6 +19,45 @@ type filters struct {
 	upcoming  string
 }
 
+var minecraftTypenames = map[string]bool{
+	minecraftStringTypename:  false,
+	minecraftIntegerTypename: false,
+	minecraftBooleanTypename: false,
+}
+
+// validateTypes returns true if filter types are valid, else returns false. If the typemap is valid, the function
+// adds missing types, so the filtering works correctly.
+func validateTypes(f *filters) bool {
+	if f.typesMap == nil {
+		return true
+	}
+	keys := make([]string, 0)
+	for k := range f.typesMap {
+		keys = append(keys, k)
+	}
+	for _, k := range keys {
+		if _, ok := minecraftTypenames[k]; !ok {
+			return false
+		}
+	}
+	prev := f.typesMap[keys[0]]
+	for i := 1; i < len(keys); i++ {
+		if f.typesMap[keys[i]] != prev {
+			return false
+		}
+	}
+	if _, ok := f.typesMap[minecraftBooleanTypename]; !ok {
+		f.typesMap[minecraftBooleanTypename] = !prev
+	}
+	if _, ok := f.typesMap[minecraftIntegerTypename]; !ok {
+		f.typesMap[minecraftIntegerTypename] = !prev
+	}
+	if _, ok := f.typesMap[minecraftStringTypename]; !ok {
+		f.typesMap[minecraftStringTypename] = !prev
+	}
+	return true
+}
+
 func (f *filters) filter(p []Property) []Property {
 	ret := make([]Property, 0)
 	if f.exactName != "" {
@@ -35,7 +74,7 @@ func (f *filters) filter(p []Property) []Property {
 	}
 	for i := range p {
 		if f.typesMap != nil {
-			if accept, ok := f.typesMap[p[i].Type]; !accept || !ok {
+			if accept := f.typesMap[p[i].Type]; !accept {
 				continue
 			}
 		}
