@@ -91,6 +91,10 @@ func ServerProperties(f *filters) ([]Property, error) {
 			switch i {
 			case 0:
 				p.Name = col.ChildText(`b`)
+				if strings.Contains(col.ChildText(`sup > i > span`), "upcoming") {
+					p.Upcoming = true
+					p.UpcomingVersion = col.ChildText(`sup > i > a`)
+				}
 			case 1:
 				rawType := strings.TrimSpace(col.Text)
 				if rawType == minecraftBooleanTypename {
